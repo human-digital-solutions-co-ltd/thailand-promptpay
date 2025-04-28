@@ -1,0 +1,41 @@
+.ppy-card {
+    max-width: 300px;
+    margin: 20px auto;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    text-align: center;
+    background: #fff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.ppy-card img {
+    max-width: 100%;
+    height: auto;
+    margin-bottom: 15px;
+}
+
+.ppy-card .account-info {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+}
+
+.ppy-card .account-info p {
+    margin: 5px 0;
+    color: #666;
+}
+
+.ppy-card .amount {
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #333;
+    margin: 10px 0;
+}
+
+@media (max-width: 480px) {
+    .ppy-card {
+        margin: 10px;
+        padding: 15px;
+    }
+} 
