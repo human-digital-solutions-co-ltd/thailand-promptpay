@@ -1,0 +1,43 @@
+.thailand-promptpay-qr {
+    text-align: center;
+    margin: 20px 0;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: #f8f8f8;
+}
+
+.thailand-promptpay-qr img {
+    max-width: 200px;
+    height: auto;
+    margin: 0 auto;
+    display: block;
+}
+
+.thailand-promptpay-instructions {
+    margin: 20px 0;
+    padding: 15px;
+    background: #fff;
+    border-left: 4px solid #2196F3;
+}
+
+.thailand-promptpay-amount {
+    font-size: 1.2em;
+    font-weight: bold;
+    margin: 10px 0;
+}
+
+.thailand-promptpay-id {
+    font-family: monospace;
+    background: #eee;
+    padding: 5px 10px;
+    border-radius: 3px;
+    display: inline-block;
+}
+
+.thailand-promptpay-business-notice {
+    color: #666;
+    font-style: italic;
+    margin: 5px 0;
+    font-size: 0.9em;
+} 

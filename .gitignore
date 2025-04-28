@@ -1,0 +1,24 @@
+# IDE
+.idea
+.vscode
+
+# dependency
+bower_components
+node_modules
+
+# dist
+*.min.js
+
+# package
+promptpay-*
+*.zip
+
+# log
+*.log
+
+# lock
+yarn.lock
+package-lock.json
+
+# bk
+bk
