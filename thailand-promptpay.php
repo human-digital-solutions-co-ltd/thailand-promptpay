@@ -139,11 +139,49 @@ add_action('wp_enqueue_scripts', 'thailand_promptpay_enqueue_styles');
  * Add custom scripts
  */
 function thailand_promptpay_enqueue_scripts(): void {
+    $should_enqueue = false;
+    
+    // Standard WooCommerce pages
     if (is_checkout() || is_account_page()) {
+        $should_enqueue = true;
+    }
+    
+    // Order received/thank you pages
+    if (is_wc_endpoint_url('order-received') || is_order_received_page()) {
+        $should_enqueue = true;
+    }
+    
+    // View order page in My Account
+    if (is_wc_endpoint_url('view-order')) {
+        $should_enqueue = true;
+    }
+    
+    // Admin order pages (for testing)
+    if (is_admin() && isset($_GET['post_type']) && $_GET['post_type'] === 'shop_order') {
+        $should_enqueue = true;
+    }
+    
+    // Check if we're on a page that might display PromptPay QR codes
+    global $post;
+    if ($post && (has_shortcode($post->post_content, 'promptpay') || 
+                  has_shortcode($post->post_content, 'thailand_promptpay'))) {
+        $should_enqueue = true;
+    }
+    
+    if ($should_enqueue) {
+        // Enqueue QRCode library from WooCommerce
+        wp_enqueue_script(
+            'qrcode-lib',
+            WC()->plugin_url() . '/assets/js/jquery-qrcode/jquery.qrcode.min.js',
+            array('jquery'),
+            WC_VERSION,
+            true
+        );
+        
         wp_enqueue_script(
             'thailand-promptpay-script',
             THAILAND_PROMPTPAY_PLUGIN_URL . 'js/main.js',
-            array('jquery'),
+            array('jquery', 'qrcode-lib'),
             THAILAND_PROMPTPAY_VERSION,
             true
         );
@@ -153,7 +191,8 @@ function thailand_promptpay_enqueue_scripts(): void {
             'thailandPromptPayParams',
             array(
                 'ajaxUrl' => admin_url('admin-ajax.php'),
-                'nonce' => wp_create_nonce('thailand-promptpay-nonce')
+                'nonce' => wp_create_nonce('thailand-promptpay-nonce'),
+                'debug' => defined('WP_DEBUG') && WP_DEBUG
             )
         );
     }

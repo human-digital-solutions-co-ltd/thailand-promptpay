@@ -29,11 +29,8 @@ Thailand PromptPay is a WordPress plugin that allows you to easily integrate Pro
 
 1. Enable the payment gateway
 2. Set your payment method title and description
-3. Choose your PromptPay ID type:
-   - Phone Number: For personal accounts
-   - Tax ID: For business accounts
-4. Enter your PromptPay ID (phone number or tax ID)
-5. Customize the payment instructions
+3. Enter your PromptPay ID (phone number or tax ID)
+4. Customize the payment instructions
 
 ## Requirements
 
