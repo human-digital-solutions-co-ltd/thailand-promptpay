@@ -29,6 +29,17 @@ class Thailand_PromptPay_Gateway extends WC_Payment_Gateway {
      * @var string PromptPay ID (phone number or tax ID)
      */
     public $promptpay_id;
+
+    /**
+     * @var string PromptPay ID type (phone or tax_id)
+     */
+    public $promptpay_id_type;
+
+    /**
+     * @var string PromptPay Account Name
+     */
+    public $promptpay_account_name;
+
     /**
      * Constructor for the gateway.
      */
@@ -53,6 +64,7 @@ class Thailand_PromptPay_Gateway extends WC_Payment_Gateway {
         $this->instructions    = $this->get_option('instructions');
         $this->promptpay_id    = $this->get_option('promptpay_id');
         $this->promptpay_id_type = $this->get_option('promptpay_id_type', 'phone');
+        $this->promptpay_account_name = $this->get_option('promptpay_account_name');
 
         // Actions
         add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this, 'process_admin_options'));
@@ -134,6 +146,25 @@ class Thailand_PromptPay_Gateway extends WC_Payment_Gateway {
                 'type'        => 'textarea',
                 'description' => __('Instructions that will be added to the thank you page and emails.', 'thailand-promptpay'),
                 'default'     => __('Please scan the QR code below to complete your payment.', 'thailand-promptpay'),
+                'desc_tip'    => true,
+            ),
+            'promptpay_id_type' => array(
+                'title'       => __('PromptPay ID Type', 'thailand-promptpay'),
+                'type'        => 'select',
+                'description' => __('Select the type of PromptPay ID you want to use.', 'thailand-promptpay'),
+                'default'     => 'phone',
+                'options'     => array(
+                    'phone'  => __('Phone Number', 'thailand-promptpay'),
+                    'tax_id' => __('Tax ID', 'thailand-promptpay'),
+                ),
+                'desc_tip'    => true,
+            ),
+            // Add PromptPay Account Name
+            'promptpay_account_name' => array(
+                'title'       => __('PromptPay Account Name', 'thailand-promptpay'),
+                'type'        => 'text',
+                'description' => __('Your PromptPay Account Name.', 'thailand-promptpay'),
+                'default'     => '',
                 'desc_tip'    => true,
             ),
             'promptpay_id' => array(
@@ -271,12 +302,12 @@ class Thailand_PromptPay_Gateway extends WC_Payment_Gateway {
         $promptpay_data = '0016A0000006770101110';
         $ppt_type_phone = '11300'; // PromptPay AID
         $ppt_type_id = '213';
-        $promptpay_data .= strlen($id) > 12 ? $ppt_type_id : $ppt_type_phone; // check if id is more than 10 digits
+        $promptpay_data .= $this->promptpay_id_type === 'tax_id' ? $ppt_type_id : $ppt_type_phone; // check if id is more than 10 digits
         // Handle promptpay type phonenumber. if user provide phone number start with 0 should replace with 66
-        if(strlen($id) >= 10 && $id[0] == '0'){
+        if($this->promptpay_id_type === 'phone' && $id[0] == '0'){
             $id = '66' . substr($id, 1);
         }
-
+        
         $promptpay_data .= $id;
         $payload .= '29' . sprintf('%02d', strlen($promptpay_data)) . $promptpay_data;
         
@@ -401,12 +432,20 @@ class Thailand_PromptPay_Gateway extends WC_Payment_Gateway {
         
         echo '<div class="thailand-promptpay-qr">';
         echo '<img src="' . esc_url($this->icon) . '" alt="' . esc_attr__('PromptPay QR Code', 'thailand-promptpay') . '">';
-        echo '<p class="thailand-promptpay-amount">' . esc_html__('Amount:', 'thailand-promptpay') . ' ' . wp_kses_post($order->get_formatted_order_total()) . '</p>';
-        
-        // Add business account notice if using Tax ID
-        if ($this->promptpay_id_type === 'tax_id') {
+
+         // Add business account notice if using Tax ID
+         if ($this->promptpay_id_type === 'tax_id') {
             echo '<p class="thailand-promptpay-business-notice">' . esc_html__('Pay to Business Account', 'thailand-promptpay') . '</p>';
         }
+
+        // Add PromptPay Account Name
+        if ($this->promptpay_account_name) {
+            echo '<p class="thailand-promptpay-account-name">' . esc_html__('Account Name:', 'thailand-promptpay') . ' ' . wp_kses_post($this->promptpay_account_name) . '</p>';
+        }
+        
+        echo '<p class="thailand-promptpay-amount">' . esc_html__('Amount:', 'thailand-promptpay') . ' ' . wp_kses_post($order->get_formatted_order_total()) . '</p>';
+        
+       
         
         // QR code container with unique ID to avoid conflicts
         $container_id = 'promptpay-qr-container-' . $order->get_id();
@@ -428,6 +467,8 @@ jQuery(document).ready(function($) {
    
     
     if (qrContainer.length && typeof $.fn.qrcode === 'function') {
+        console.log('Thailand PromptPay: Generating QR code with payload: " . esc_js($payload) . "');
+        
         try {
             qrContainer.qrcode({
                 text: '" . esc_js($payload) . "',
