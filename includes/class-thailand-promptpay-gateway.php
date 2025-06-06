@@ -9,6 +9,9 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+// Include PromptPayGenerate class
+require_once plugin_dir_path(__FILE__) . 'class-promptpay-generate.php';
+
 if (!class_exists('WC_Payment_Gateway')) {
     if (defined('WP_DEBUG') && WP_DEBUG) {
         error_log('Thailand PromptPay: WooCommerce Payment Gateway class not found');
@@ -41,6 +44,11 @@ class Thailand_PromptPay_Gateway extends WC_Payment_Gateway {
     public $promptpay_account_name;
 
     /**
+     * @var PromptPayGenerate PromptPay payload generator
+     */
+    private $PromptPay;
+
+    /**
      * Constructor for the gateway.
      */
     public function __construct() {
@@ -53,6 +61,9 @@ class Thailand_PromptPay_Gateway extends WC_Payment_Gateway {
         $this->has_fields         = false;
         $this->method_title       = __('Thailand PromptPay', 'thailand-promptpay');
         $this->method_description = __('Accept payments via Thailand PromptPay QR code.', 'thailand-promptpay');
+
+        // Initialize PromptPay generator
+        $this->PromptPay = new PromptPayGenerate();
 
         // Load the settings
         $this->init_form_fields();
@@ -265,7 +276,7 @@ class Thailand_PromptPay_Gateway extends WC_Payment_Gateway {
     }
     
     /**
-     * Generate a PromptPay payload according to EMVCo standards
+     * Generate a PromptPay payload using PromptPayGenerate class
      * 
      * @param string $id PromptPay ID (phone number or tax ID)
      * @param float $amount Payment amount
@@ -276,9 +287,6 @@ class Thailand_PromptPay_Gateway extends WC_Payment_Gateway {
             error_log('Thailand PromptPay: Generating payload for ID: ' . $id . ', Amount: ' . $amount);
         }
         
-        // Sanitize and format the ID
-        $id = preg_replace('/[^0-9]/', '', $id);
-        
         if (empty($id)) {
             if (defined('WP_DEBUG') && WP_DEBUG) {
                 error_log('Thailand PromptPay: Empty or invalid ID provided');
@@ -286,77 +294,25 @@ class Thailand_PromptPay_Gateway extends WC_Payment_Gateway {
             return '';
         }
         
-        // Format amount
-        $amount = number_format((float)$amount, 2, '.', '');
+        // Format amount - pass null for static QR (no amount), otherwise pass the amount
+        $formatted_amount = ($amount > 0) ? (float)$amount : null;
         
-        // Build EMVCo QR Code payload
-        $payload = '';
-        
-        // Payload Format Indicator (Tag 00)
-        $payload .= '000201';
-        
-        // Point of Initiation Method (Tag 01) - Static QR
-        $payload .= '010211';
-        
-        // Merchant Account Information (Tag 29) - PromptPay
-        $promptpay_data = '0016A0000006770101110';
-        $ppt_type_phone = '11300'; // PromptPay AID
-        $ppt_type_id = '213';
-        $promptpay_data .= $this->promptpay_id_type === 'tax_id' ? $ppt_type_id : $ppt_type_phone; // check if id is more than 10 digits
-        // Handle promptpay type phonenumber. if user provide phone number start with 0 should replace with 66
-        if($this->promptpay_id_type === 'phone' && $id[0] == '0'){
-            $id = '66' . substr($id, 1);
-        }
-        
-        $promptpay_data .= $id;
-        $payload .= '29' . sprintf('%02d', strlen($promptpay_data)) . $promptpay_data;
-        
-        // Country Code (Tag 58) - Thailand
-        $payload .= '5802TH';
-        
-        // Transaction Amount (Tag 54) - Only if amount > 0
-        if ($amount > 0) {
-            $payload .= '5405'  . $amount;
-        }
-        
-        // Currency Code (Tag 53) - THB (764)
-        $payload .= '5303764';
-        
-        // CRC16 (Tag 63) - Calculate checksum
-        $payload .= '6304';
-        $crc = $this->calculate_crc16($payload);
-        $payload .= strtoupper(sprintf('%04x', $crc));
-        
-        if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('Thailand PromptPay: Generated payload: ' . $payload);
-        }
-        
-        return $payload;
-    }
-    
-    /**
-     * Calculate CRC16-CCITT checksum for PromptPay QR code
-     * 
-     * @param string $data Input data
-     * @return int CRC16 checksum
-     */
-    private function calculate_crc16($data) {
-        $crc = 0xFFFF;
-        $polynomial = 0x1021;
-        
-        for ($i = 0; $i < strlen($data); $i++) {
-            $crc ^= (ord($data[$i]) << 8);
+        try {
+            // Use PromptPayGenerate class to generate payload
+            $payload = $this->PromptPay->generatePayload($id, $formatted_amount);
             
-            for ($j = 0; $j < 8; $j++) {
-                if ($crc & 0x8000) {
-                    $crc = (($crc << 1) ^ $polynomial) & 0xFFFF;
-                } else {
-                    $crc = ($crc << 1) & 0xFFFF;
-                }
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('Thailand PromptPay: Generated payload: ' . $payload);
             }
+            
+            return $payload;
+            
+        } catch (Exception $e) {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('Thailand PromptPay: Error generating payload: ' . $e->getMessage());
+            }
+            return '';
         }
-        
-        return $crc;
     }
 
     /**
