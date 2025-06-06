@@ -106,6 +106,23 @@ function thailand_promptpay_init(): void {
 add_action('plugins_loaded', 'thailand_promptpay_init');
 
 /**
+ * Add blocks support for Thailand PromptPay gateway
+ */
+function thailand_promptpay_woocommerce_blocks_support(): void {
+    if (class_exists('Automattic\WooCommerce\Blocks\Payments\Integrations\AbstractPaymentMethodType')) {
+        require_once THAILAND_PROMPTPAY_PLUGIN_DIR . 'includes/class-thailand-promptpay-blocks-support.php';
+        
+        add_action(
+            'woocommerce_blocks_payment_method_type_registration',
+            function(Automattic\WooCommerce\Blocks\Payments\PaymentMethodRegistry $payment_method_registry) {
+                $payment_method_registry->register(new Thailand_PromptPay_Blocks_Support());
+            }
+        );
+    }
+}
+add_action('woocommerce_blocks_loaded', 'thailand_promptpay_woocommerce_blocks_support');
+
+/**
  * Add plugin action links
  *
  * @param array $links Array of plugin action links.
