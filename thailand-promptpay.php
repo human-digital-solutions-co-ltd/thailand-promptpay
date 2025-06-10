@@ -3,7 +3,7 @@
  * Plugin Name: Thailand PromptPay
  * Plugin URI: https://github.com/human-digital-solutions-co-ltd/thailand-promptpay
  * Description: A WordPress plugin for integrating PromptPay payment system in Thailand
- * Version: 1.0.0
+ * Version: 1.1.0
  * Author: Human Digital Solutions Co., Ltd
  * Author URI: https://github.com/human-digital-solutions-co-ltd
  * License: MIT
@@ -24,7 +24,7 @@ if (!defined('WPINC')) {
 }
 
 // Define plugin constants
-define('THAILAND_PROMPTPAY_VERSION', '1.0.0');
+define('THAILAND_PROMPTPAY_VERSION', '1.1.0');
 define('THAILAND_PROMPTPAY_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('THAILAND_PROMPTPAY_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('THAILAND_PROMPTPAY_PLUGIN_BASENAME', plugin_basename(__FILE__));
@@ -65,9 +65,9 @@ function thailand_promptpay_woocommerce_missing_notice(): void {
             <?php
             printf(
                 /* translators: %1$s: Plugin name, %2$s: WooCommerce link */
-                esc_html__('%1$s requires %2$s to be installed and active.', 'thailand-promptpay'),
-                '<strong>' . esc_html__('Thailand PromptPay', 'thailand-promptpay') . '</strong>',
-                '<a href="https://wordpress.org/plugins/woocommerce/" target="_blank">' . esc_html__('WooCommerce', 'thailand-promptpay') . '</a>'
+                esc_html__('%1$s requires %2$s to be installed and active.', 'thailand-promptpay-admin'),
+                '<strong>' . esc_html__('Thailand PromptPay', 'thailand-promptpay-admin') . '</strong>',
+                '<a href="https://wordpress.org/plugins/woocommerce/" target="_blank">' . esc_html__('WooCommerce', 'thailand-promptpay-admin') . '</a>'
             );
             ?>
         </p>
@@ -131,7 +131,7 @@ add_action('woocommerce_blocks_loaded', 'thailand_promptpay_woocommerce_blocks_s
 function thailand_promptpay_plugin_action_links(array $links): array {
     $plugin_links = array(
         '<a href="' . esc_url(admin_url('admin.php?page=wc-settings&tab=checkout&section=thailand_promptpay')) . '">' . 
-        esc_html__('Settings', 'thailand-promptpay') . '</a>'
+        esc_html__('Settings', 'thailand-promptpay-admin') . '</a>'
     );
     return array_merge($plugin_links, $links);
 }
