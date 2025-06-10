@@ -79,8 +79,8 @@ class Thailand_PromptPay_Gateway extends WC_Payment_Gateway {
         $this->id                 = 'thailand_promptpay';
         $this->icon               = THAILAND_PROMPTPAY_PLUGIN_URL . 'image/promptpay.jpg';
         $this->has_fields         = false;
-        $this->method_title       = __('Thailand PromptPay', 'thailand-promptpay');
-        $this->method_description = __('Accept payments via Thailand PromptPay QR code.', 'thailand-promptpay');
+        $this->method_title       = __('Thailand PromptPay', 'thailand-promptpay-admin');
+        $this->method_description = __('Accept payments via Thailand PromptPay QR code.', 'thailand-promptpay-admin');
 
         // Initialize PromptPay generator
         $this->PromptPay = new PromptPayGenerate();
@@ -144,7 +144,7 @@ class Thailand_PromptPay_Gateway extends WC_Payment_Gateway {
                 error_log('Thailand PromptPay: WooCommerce not found');
             }
             echo '<div class="notice notice-error"><p>' . 
-                esc_html__('Thailand PromptPay requires WooCommerce to be installed and active.', 'thailand-promptpay') . 
+                esc_html__('Thailand PromptPay requires WooCommerce to be installed and active.', 'thailand-promptpay-admin') . 
                 '</p></div>';
             return false;
         }
@@ -161,86 +161,81 @@ class Thailand_PromptPay_Gateway extends WC_Payment_Gateway {
 
         $this->form_fields = array(
             'enabled' => array(
-                'title'   => __('Enable/Disable', 'thailand-promptpay'),
+                'title'   => __('Enable/Disable', 'thailand-promptpay-admin'),
                 'type'    => 'checkbox',
-                'label'   => __('Enable Thailand PromptPay', 'thailand-promptpay'),
+                'label'   => __('Enable Thailand PromptPay', 'thailand-promptpay-admin'),
                 'default' => 'yes'
             ),
             'title' => array(
-                'title'       => __('Title', 'thailand-promptpay'),
+                'title'       => __('Title', 'thailand-promptpay-admin'),
                 'type'        => 'text',
-                'description' => __('Payment method title that the customer will see on your checkout.', 'thailand-promptpay'),
+                'description' => __('Payment method title that the customer will see on your checkout.', 'thailand-promptpay-admin'),
                 'default'     => __('PromptPay', 'thailand-promptpay'),
                 'desc_tip'    => true,
             ),
             'description' => array(
-                'title'       => __('Description', 'thailand-promptpay'),
+                'title'       => __('Description', 'thailand-promptpay-admin'),
                 'type'        => 'textarea',
-                'description' => __('Payment method description that the customer will see on your checkout.', 'thailand-promptpay'),
+                'description' => __('Payment method description that the customer will see on your checkout.', 'thailand-promptpay-admin'),
                 'default'     => __('Pay using Thailand PromptPay QR code.', 'thailand-promptpay'),
                 'desc_tip'    => true,
             ),
             'instructions_line1' => array(
-                'title'       => __('Instructions Line 1', 'thailand-promptpay'),
+                'title'       => __('Instructions Line 1', 'thailand-promptpay-admin'),
                 'type'        => 'text',
-                'description' => __('First line of instructions that will be shown under the QR code. at Order Review page.', 'thailand-promptpay'),
+                'description' => __('First line of instructions that will be shown under the QR code. at Order Review page.', 'thailand-promptpay-admin'),
                 'default'     => __('Please scan the QR code above to complete your payment.', 'thailand-promptpay'),
                 'desc_tip'    => true,
             ),
             'instructions_line2' => array(
-                'title'       => __('Instructions Line 2', 'thailand-promptpay'),
+                'title'       => __('Instructions Line 2', 'thailand-promptpay-admin'),
                 'type'        => 'text',
-                'description' => __('Second line of instructions that will be shown under the QR code. at Order Review page.', 'thailand-promptpay'),
+                'description' => __('Second line of instructions that will be shown under the QR code. at Order Review page.', 'thailand-promptpay-admin'),
                 'default'     => __('Send us your payment slip via LINE Account. Once we verify the transfer we will confirm your order by e-mail.', 'thailand-promptpay'),
                 'desc_tip'    => true,
             ),
             'show_on_pay_page' => array(
-                'title'       => __('Show QR on Pay Page', 'thailand-promptpay'),
+                'title'       => __('Show QR on Pay Page', 'thailand-promptpay-admin'),
                 'type'        => 'checkbox',
-                'label'       => __('Show QR code on the pay order page', 'thailand-promptpay'),
-                'description' => __('Enable this to display the QR code on the pay order page when PromptPay is selected.', 'thailand-promptpay'),
+                'label'       => __('Show QR code on the pay order page', 'thailand-promptpay-admin'),
+                'description' => __('Enable this to display the QR code on the pay order page when PromptPay is selected.', 'thailand-promptpay-admin'),
                 'default'     => 'no',
                 'desc_tip'    => true,
             ),
             'promptpay_id_type' => array(
-                'title'       => __('PromptPay ID Type', 'thailand-promptpay'),
+                'title'       => __('PromptPay ID Type', 'thailand-promptpay-admin'),
                 'type'        => 'select',
-                'description' => __('Select the type of PromptPay ID you want to use.', 'thailand-promptpay'),
+                'description' => __('Select the type of PromptPay ID you want to use.', 'thailand-promptpay-admin'),
                 'default'     => 'phone',
                 'options'     => array(
-                    'phone'  => __('Phone Number', 'thailand-promptpay'),
-                    'tax_id' => __('Tax ID', 'thailand-promptpay'),
+                    'phone'  => __('Phone Number', 'thailand-promptpay-admin'),
+                    'tax_id' => __('Tax ID', 'thailand-promptpay-admin'),
                 ),
                 'desc_tip'    => true,
             ),
-            // Add PromptPay Account Name
             'promptpay_account_name' => array(
-                'title'       => __('PromptPay Account Name', 'thailand-promptpay'),
+                'title'       => __('PromptPay Account Name', 'thailand-promptpay-admin'),
                 'type'        => 'text',
-                'description' => __('Your PromptPay Account Name.', 'thailand-promptpay'),
+                'description' => __('Your PromptPay Account Name.', 'thailand-promptpay-admin'),
                 'default'     => '',
                 'desc_tip'    => true,
             ),
             'promptpay_id' => array(
-                'title'       => __('PromptPay ID', 'thailand-promptpay'),
+                'title'       => __('PromptPay ID', 'thailand-promptpay-admin'),
                 'type'        => 'text',
-                'description' => __('Your PromptPay ID (phone number or tax ID).', 'thailand-promptpay'),
+                'description' => __('Your PromptPay ID (phone number or tax ID).', 'thailand-promptpay-admin'),
                 'default'     => '',
                 'desc_tip'    => true,
             ),
             'line_destination' => array(
-                'title'       => __('LINE Destination', 'thailand-promptpay'),
+                'title'       => __('LINE Destination', 'thailand-promptpay-admin'),
                 'type'        => 'text',
-                'description' => __('Your LINE destination URL (e.g., https://line.me/R/ti/p/@yourid). Leave empty to hide LINE instructions.', 'thailand-promptpay'),
+                'description' => __('Your LINE destination URL (e.g., https://line.me/R/ti/p/@yourid). Leave empty to hide LINE instructions.', 'thailand-promptpay-admin'),
                 'default'     => '',
                 'placeholder' => 'https://line.me/R/ti/p/@yourid',
                 'desc_tip'    => true,
             ),
         );
-
-        if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('Thailand PromptPay: Form fields initialized');
-        }
     }
 
     /**
@@ -257,9 +252,6 @@ class Thailand_PromptPay_Gateway extends WC_Payment_Gateway {
         $order = wc_get_order($order_id);
         
         if (!$order) {
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('Thailand PromptPay: Invalid order ID ' . $order_id);
-            }
             $msg = __('Invalid order.', 'thailand-promptpay');
             wc_add_notice($msg, 'error');
             return array(
@@ -349,8 +341,8 @@ class Thailand_PromptPay_Gateway extends WC_Payment_Gateway {
             echo esc_html__('We have received your order and it is now awaiting payment confirmation.', 'thailand-promptpay') . '<br>';
             echo '<div style="margin-top: 15px;">';
             echo '<strong>' . esc_html__('Next step', 'thailand-promptpay') . ':</strong><br>';
-            echo '1. Please scan the QR code above to complete your payment.';
-            echo '<p style="margin-top: 10px; font-size: 0.9em;">' . esc_html__('2. Send us your payment slip via LINE Account. Once we verify the transfer we will confirm your order by e-mail.', 'thailand-promptpay') . '</p>';
+            echo '1. '.esc_html($this->instructions_line1, 'thailand-promptpay').'<br>';
+            echo '2. '.esc_html($this->instructions_line2, 'thailand-promptpay').'<br>';
             if (!empty($this->line_destination)) {
             echo '<a href="' . esc_url($line_url) . '" target="_blank" rel="noopener" style="display: inline-block; background-color: #06C755; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold; transition: background-color 0.3s ease;">';
             echo '<span style="display: inline-block; vertical-align: middle; margin-right: 8px;">📱</span>';
@@ -509,7 +501,6 @@ jQuery(document).ready(function($) {
    
     
     if (qrContainer.length && typeof $.fn.qrcode === 'function') {
-        console.log('Thailand PromptPay: Generating QR code with payload: " . esc_js($payload) . "');
         
         try {
             qrContainer.qrcode({
