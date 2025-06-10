@@ -3,6 +3,8 @@
  * Handles PromptPay payment interactions and QR code functionality
  */
 jQuery(document).ready(function($) {
+    // Hide pay button
+    $('.woocommerce-button.button.pay.order-actions-button').hide();
     
     /**
      * Generates PromptPay QR code data according to the EMVCo QR Code Specification
