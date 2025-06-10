@@ -44,9 +44,29 @@ class Thailand_PromptPay_Gateway extends WC_Payment_Gateway {
     public $promptpay_account_name;
 
     /**
+     * @var string LINE destination URL
+     */
+    public $line_destination;
+
+    /**
      * @var PromptPayGenerate PromptPay payload generator
      */
     private $PromptPay;
+
+    /**
+     * @var string Show QR on pay page
+     */
+    public $show_on_pay_page;
+
+    /**
+     * @var string First line of instructions
+     */
+    public $instructions_line1;
+
+    /**
+     * @var string Second line of instructions
+     */
+    public $instructions_line2;
 
     /**
      * Constructor for the gateway.
@@ -73,9 +93,13 @@ class Thailand_PromptPay_Gateway extends WC_Payment_Gateway {
         $this->title           = $this->get_option('title');
         $this->description     = $this->get_option('description');
         $this->instructions    = $this->get_option('instructions');
+        $this->instructions_line1 = $this->get_option('instructions_line1');
+        $this->instructions_line2 = $this->get_option('instructions_line2');
         $this->promptpay_id    = $this->get_option('promptpay_id');
         $this->promptpay_id_type = $this->get_option('promptpay_id_type', 'phone');
         $this->promptpay_account_name = $this->get_option('promptpay_account_name');
+        $this->line_destination = $this->get_option('line_destination', '');
+        $this->show_on_pay_page = $this->get_option('show_on_pay_page', 'no');
 
         // Actions
         add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this, 'process_admin_options'));
@@ -83,6 +107,10 @@ class Thailand_PromptPay_Gateway extends WC_Payment_Gateway {
         add_action('woocommerce_email_before_order_table', array($this, 'email_instructions'), 10, 3);
         // Only show QR on order details if not on thank you page
         add_action('woocommerce_order_details_after_order_table', array($this, 'display_qr_on_order_details'));
+        // Add QR code display on pay order page if enabled
+        if ($this->show_on_pay_page === 'yes') {
+            add_action('woocommerce_pay_order_before_payment', array($this, 'display_qr_on_pay_order_page'));
+        }
         
         // Add debug logging
         add_action('admin_notices', array($this, 'check_requirements'));
@@ -152,11 +180,26 @@ class Thailand_PromptPay_Gateway extends WC_Payment_Gateway {
                 'default'     => __('Pay using Thailand PromptPay QR code.', 'thailand-promptpay'),
                 'desc_tip'    => true,
             ),
-            'instructions' => array(
-                'title'       => __('Instructions', 'thailand-promptpay'),
-                'type'        => 'textarea',
-                'description' => __('Instructions that will be added to the thank you page and emails.', 'thailand-promptpay'),
-                'default'     => __('Please scan the QR code below to complete your payment.', 'thailand-promptpay'),
+            'instructions_line1' => array(
+                'title'       => __('Instructions Line 1', 'thailand-promptpay'),
+                'type'        => 'text',
+                'description' => __('First line of instructions that will be shown under the QR code. at Order Review page.', 'thailand-promptpay'),
+                'default'     => __('Please scan the QR code above to complete your payment.', 'thailand-promptpay'),
+                'desc_tip'    => true,
+            ),
+            'instructions_line2' => array(
+                'title'       => __('Instructions Line 2', 'thailand-promptpay'),
+                'type'        => 'text',
+                'description' => __('Second line of instructions that will be shown under the QR code. at Order Review page.', 'thailand-promptpay'),
+                'default'     => __('Send us your payment slip via LINE Account. Once we verify the transfer we will confirm your order by e-mail.', 'thailand-promptpay'),
+                'desc_tip'    => true,
+            ),
+            'show_on_pay_page' => array(
+                'title'       => __('Show QR on Pay Page', 'thailand-promptpay'),
+                'type'        => 'checkbox',
+                'label'       => __('Show QR code on the pay order page', 'thailand-promptpay'),
+                'description' => __('Enable this to display the QR code on the pay order page when PromptPay is selected.', 'thailand-promptpay'),
+                'default'     => 'no',
                 'desc_tip'    => true,
             ),
             'promptpay_id_type' => array(
@@ -183,6 +226,14 @@ class Thailand_PromptPay_Gateway extends WC_Payment_Gateway {
                 'type'        => 'text',
                 'description' => __('Your PromptPay ID (phone number or tax ID).', 'thailand-promptpay'),
                 'default'     => '',
+                'desc_tip'    => true,
+            ),
+            'line_destination' => array(
+                'title'       => __('LINE Destination', 'thailand-promptpay'),
+                'type'        => 'text',
+                'description' => __('Your LINE destination URL (e.g., https://line.me/R/ti/p/@yourid). Leave empty to hide LINE instructions.', 'thailand-promptpay'),
+                'default'     => '',
+                'placeholder' => 'https://line.me/R/ti/p/@yourid',
                 'desc_tip'    => true,
             ),
         );
@@ -254,25 +305,64 @@ class Thailand_PromptPay_Gateway extends WC_Payment_Gateway {
      */
     public function thankyou_page($order_id) {
         if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('Thailand PromptPay: thankyou_page called for order ' . $order_id);
+            error_log('Thailand PromptPay: Starting thankyou_page render for order ' . $order_id);
+            error_log('Thailand PromptPay: Current LINE destination: ' . $this->line_destination);
         }
 
         $order = wc_get_order($order_id);
         if (!$order) {
             if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('Thailand PromptPay: Invalid order ID ' . $order_id . ' for thank you page');
+                error_log('Thailand PromptPay: Invalid order ID ' . $order_id);
             }
             return;
         }
-        
-        if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('Thailand PromptPay: Order found, payment method: ' . $order->get_payment_method());
-            error_log('Thailand PromptPay: Gateway ID: ' . $this->id);
-            error_log('Thailand PromptPay: PromptPay ID: ' . $this->promptpay_id);
+
+        if ($order->get_payment_method() !== $this->id) {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('Thailand PromptPay: Order ' . $order_id . ' is not using PromptPay. Method: ' . $order->get_payment_method());
+            }
+            return;
         }
-        
-        // Use the shared QR code rendering method
+
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('Thailand PromptPay: Payment method matches, proceeding with render');
+        }
+
+
+        // Render QR code
         $this->render_qr_code($order);
+
+        // Add LINE instruction block only if LINE destination is set
+        
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('Thailand PromptPay: LINE destination is set, preparing to display instructions');
+            }
+            
+            $line_url = esc_url($this->line_destination);
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('Thailand PromptPay: Escaped LINE URL: ' . $line_url);
+            }
+            
+            // Output LINE instructions directly
+            echo '<div class="woocommerce-message thailand-promptpay-line-instr" style="margin-top:1rem; background: #e6f9ec; border: 1px solid #39c24a; color: #222; box-shadow: none;">';
+           
+            echo esc_html__('We have received your order and it is now awaiting payment confirmation.', 'thailand-promptpay') . '<br>';
+            echo '<div style="margin-top: 15px;">';
+            echo '<strong>' . esc_html__('Next step', 'thailand-promptpay') . ':</strong><br>';
+            echo '1. Please scan the QR code above to complete your payment.';
+            echo '<p style="margin-top: 10px; font-size: 0.9em;">' . esc_html__('2. Send us your payment slip via LINE Account. Once we verify the transfer we will confirm your order by e-mail.', 'thailand-promptpay') . '</p>';
+            if (!empty($this->line_destination)) {
+            echo '<a href="' . esc_url($line_url) . '" target="_blank" rel="noopener" style="display: inline-block; background-color: #06C755; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold; transition: background-color 0.3s ease;">';
+            echo '<span style="display: inline-block; vertical-align: middle; margin-right: 8px;">📱</span>';
+            echo esc_html__('Open LINE', 'thailand-promptpay');
+            echo '</a>';
+            }
+            echo '</div>';
+            echo '</div>';
+            
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('Thailand PromptPay: LINE instructions HTML output complete');
+        }
     }
     
     /**
@@ -382,10 +472,6 @@ class Thailand_PromptPay_Gateway extends WC_Payment_Gateway {
     private function render_qr_code($order) {
         $amount = $order->get_total();
         
-        if ($this->instructions) {
-            echo wp_kses_post(wpautop(wptexturize($this->instructions)));
-        }
-        
         echo '<div class="thailand-promptpay-qr">';
         echo '<img src="' . esc_url($this->icon) . '" alt="' . esc_attr__('PromptPay QR Code', 'thailand-promptpay') . '">';
 
@@ -447,5 +533,56 @@ jQuery(document).ready(function($) {
     }
 });
 </script>";
+    }
+
+    /**
+     * Display QR code on pay order page
+     */
+    public function display_qr_on_pay_order_page() {
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('Thailand PromptPay: display_qr_on_pay_order_page called');
+        }
+
+        // Get the current order
+        global $wp;
+        $order_id = absint($wp->query_vars['order-pay']);
+        $order = wc_get_order($order_id);
+
+        if (!$order) {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('Thailand PromptPay: No order found in display_qr_on_pay_order_page');
+            }
+            return;
+        }
+
+        // Add container for QR code with initial hidden state
+        echo '<div id="thailand-promptpay-qr-container" style="display: none;">';
+        $this->render_qr_code($order);
+        echo '</div>';
+
+        // Add JavaScript to handle payment method selection
+        ?>
+        <script type="text/javascript">
+        jQuery(document).ready(function($) {
+            // Function to check if PromptPay is selected
+            function checkPaymentMethod() {
+                var selectedMethod = $('input[name="payment_method"]:checked').val();
+                if (selectedMethod === '<?php echo esc_js($this->id); ?>') {
+                    $('#thailand-promptpay-qr-container').show();
+                } else {
+                    $('#thailand-promptpay-qr-container').hide();
+                }
+            }
+
+            // Check on page load
+            checkPaymentMethod();
+
+            // Check when payment method changes
+            $('form.checkout, form#order_review').on('change', 'input[name="payment_method"]', function() {
+                checkPaymentMethod();
+            });
+        });
+        </script>
+        <?php
     }
 } 
